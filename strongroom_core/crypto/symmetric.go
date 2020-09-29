@@ -5,22 +5,22 @@ import (
 	"crypto/cipher"
 )
 
-func AESGCMEncrypt(data []byte, key []byte, nonce []byte) []byte {
+func AESGCMEncrypt(plaintext []byte, key []byte, nonce []byte) ([]byte, error) {
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		panic(err.Error())
+		return nil, err
 	}
 
 	aesgcm, err := cipher.NewGCM(block)
 	if err != nil {
-		panic(err.Error())
+		return nil, err
 	}
 
-	return aesgcm.Seal(nil, nonce, data, nil)
+	return aesgcm.Seal(nil, nonce, plaintext, nil), nil
 }
 
-func AESGCMDecrypt(ciphertext []byte, key []byte, nonce []byte) []byte {
+func AESGCMDecrypt(ciphertext []byte, key []byte, nonce []byte) ([]byte, error) {
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -34,8 +34,8 @@ func AESGCMDecrypt(ciphertext []byte, key []byte, nonce []byte) []byte {
 
 	decrypted, err := aesgcm.Open(nil, nonce, ciphertext, nil)
 	if err != nil {
-		panic(err.Error())
+		return nil, err
 	}
 
-	return decrypted
+	return decrypted, nil
 }

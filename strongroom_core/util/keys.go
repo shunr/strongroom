@@ -28,6 +28,11 @@ func GenerateAsymmetricKeyPair() (*rsa.PrivateKey, *rsa.PublicKey) {
 	return crypto.GenerateRSAKeyPair(4096)
 }
 
+func GenerateSymmetricKey() []byte {
+	// Generate 256-bit keys
+	return crypto.RandBytes(32)
+}
+
 func DeriveKeyFromMasterPasswordAndSecretKey(
 	username string, master_password string, secret_key string, salt []byte) []byte {
 	const key_length int = 32
