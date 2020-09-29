@@ -1,0 +1,14 @@
+.tox
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*,cover
+*.log
+.git
+
+# Generated protobuf code
+*.pb.go
+
+# TODO: Populate this w/ Golang things
