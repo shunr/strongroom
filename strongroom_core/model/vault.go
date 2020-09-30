@@ -37,7 +37,7 @@ type VaultItem struct {
 
 func NewVault(name string) Vault {
 	vault_id, _ := uuid.NewRandom()
-	vault := Vault{vault_id, name, map[uuid.UUID]VaultItem{}, map[uuid.UUID]VaultItemMetadata{}}
+	vault := Vault{vault_id, name, make(map[uuid.UUID]VaultItemMetadata), make(map[uuid.UUID]VaultItem)}
 	return vault
 }
 
