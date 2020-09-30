@@ -5,7 +5,7 @@ import (
 	"crypto/cipher"
 )
 
-func AESGCMEncrypt(plaintext []byte, key []byte, nonce []byte) ([]byte, error) {
+func EncryptAESGCM(plaintext []byte, key []byte, nonce []byte) ([]byte, error) {
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -20,7 +20,7 @@ func AESGCMEncrypt(plaintext []byte, key []byte, nonce []byte) ([]byte, error) {
 	return aesgcm.Seal(nil, nonce, plaintext, nil), nil
 }
 
-func AESGCMDecrypt(ciphertext []byte, key []byte, nonce []byte) ([]byte, error) {
+func DecryptAESGCM(ciphertext []byte, key []byte, nonce []byte) ([]byte, error) {
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -38,4 +38,8 @@ func AESGCMDecrypt(ciphertext []byte, key []byte, nonce []byte) ([]byte, error) 
 	}
 
 	return decrypted, nil
+}
+
+func RandNonce() []byte {
+	return RandBytes(12)
 }

@@ -24,7 +24,7 @@ func GenerateSecretKey(username string, key_length int) string {
 	return strings.ToUpper(VERSION_INFO + (username + "XXXXXX")[:6] + string(random_chars))
 }
 
-func GenerateAsymmetricKeyPair() (*rsa.PrivateKey, *rsa.PublicKey) {
+func GenerateAsymmetricKeyPair() (*rsa.PrivateKey, *crypto.PublicKey) {
 	return crypto.GenerateRSAKeyPair(4096)
 }
 

@@ -3,48 +3,73 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"github.com/shunr/strongroom_core/api"
-	"github.com/shunr/strongroom_core/crypto"
-	"github.com/shunr/strongroom_core/util"
+	"github.com/google/uuid"
+	"github.com/shunr/strongroom_core/client"
 	"os"
 	"strings"
 )
 
+const LOCAL_STORE_FILE string = "/tmp/strongroom_store.json"
+
 func main() {
+	reader := bufio.NewReader(os.Stdin)
 	cmd := os.Args[1]
+	store, err := client.NewLocalStore(LOCAL_STORE_FILE)
+	if err != nil {
+		panic(err.Error())
+	}
+	client, err := client.NewClient(store)
+	if err != nil {
+		panic(err.Error())
+	}
 	switch cmd {
 	case "create":
-		reader := bufio.NewReader(os.Stdin)
 		fmt.Print("Username: ")
 		username, _ := reader.ReadString('\n')
 		fmt.Print("Password: ")
 		password, _ := reader.ReadString('\n')
 		username = strings.TrimSpace(username)
 		password = strings.TrimSpace(password)
-		account := api.CreateAccount(username, password)
-		err := account.ExportToFile(os.Args[2])
+		err := client.CreateAccount(username, password)
 		if err != nil {
 			panic(err.Error())
 		}
 		break
 	case "load":
-		account, err := api.ImportAccountFromFile(os.Args[2])
+		accounts := client.Accounts()
+		fmt.Println(accounts)
+		fmt.Print("Id: ")
+		id, _ := reader.ReadString('\n')
+		fmt.Print("Password: ")
+		password, err := reader.ReadString('\n')
 		if err != nil {
 			panic(err.Error())
 		}
-		fmt.Print("Password: ")
-		reader := bufio.NewReader(os.Stdin)
-		password, _ := reader.ReadString('\n')
-		muk := util.DeriveKeyFromMasterPasswordAndSecretKey(account.Username, password, account.SecretKey, account.MasterUnlockSalt)
-		private, err := crypto.AESGCMDecrypt(account.EncryptedPrivateKey, muk, account.PrivateKeyNonce)
+		acc_id, _ := uuid.Parse(strings.TrimSpace(id))
+		password = strings.TrimSpace(password)
+		account := accounts[acc_id]
+		sess, err := client.NewSession(account, password)
 		if err != nil {
-			fmt.Println("Wrong master password")
-			os.Exit(-1)
-		} else {
-			fmt.Println(string(private))
+			panic(err.Error())
 		}
+		fmt.Println(sess.CurrentAccount.Username)
 
+		fmt.Println(sess.CurrentAccount.VaultKeys)
+		client.AddVault(sess, "vault1")
+		fmt.Println(sess.CurrentAccount.VaultKeys)
+		vaults := client.Vaults()
+		for k, v := range vaults {
+			fmt.Println(k, v)
+		}
 		break
-	}
+	default:
+		fmt.Println(client.Accounts())
+		fmt.Print("Username: ")
+		username, _ := reader.ReadString('\n')
+		fmt.Print("Password: ")
+		password, _ := reader.ReadString('\n')
+		username = strings.TrimSpace(username)
+		password = strings.TrimSpace(password)
 
+	}
 }

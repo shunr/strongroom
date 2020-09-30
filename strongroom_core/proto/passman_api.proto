@@ -16,6 +16,4 @@ message CreateAccountRequest {
   string display_name = 5;
 }
 
-message Bruh { CreateAccountRequest ss = 1; }
-
 message CreateAccountResponse { string username = 1; }
