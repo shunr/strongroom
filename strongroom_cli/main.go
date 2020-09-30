@@ -9,6 +9,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/shunr/strongroom_core/client"
 	. "github.com/shunr/strongroom_core/client"
+	"github.com/shunr/strongroom_core/crypto"
+	. "github.com/shunr/strongroom_core/model"
 )
 
 func main() {
@@ -93,38 +95,52 @@ func main() {
 				break
 			}
 
+			fmt.Print("Vault Id: ")
 			id, _ := reader.ReadString('\n')
 			uuid, _ := uuid.Parse(strings.TrimSpace(id))
-			vault, err := client.OpenVault(sess, uuid)
+			vault, vault_key, err := client.GetDecryptedVaultAndKey(sess, uuid)
 
 			if err != nil {
 				fmt.Println("Cannot open vault: ", err.Error())
 				break
 			}
 
-			// Id       uuid.UUID
-			// Name     string
-			// Items    map[uuid.UUID]VaultItem
-			// Metadata map[uuid.UUID]VaultItemMetadata
-
-			// type VaultItemMetadata struct {
-			// 	Name        string
-			// 	Description string
-			// }
-
-			// type VaultItem struct {
-			// 	Id            uuid.UUID
-			// 	EncryptedData []byte
-			// 	Nonce         []byte
-			// }
-
-			fmt.Println("Vault Id: ", vault.Id)
 			fmt.Println("Vault Name: ", vault.Name)
 
 			for k, v := range vault.Items {
-				fmt.Println(vault.Metadata[k].Name)
-				fmt.Println(vault.Metadata[k].Description)
-				fmt.Println(string(v.EncryptedData))
+				decrypted_password, err := crypto.DecryptAESGCM(v.EncryptedData, vault_key, v.Nonce)
+				if err != nil {
+					continue
+				}
+				fmt.Println(vault.Metadata[k].Name, "|", vault.Metadata[k].Description, "|", string(decrypted_password))
+			}
+			break
+		case "add_password":
+			// func (client *StrongroomClient) AddItemToVault(session *Session, vault_id uuid.UUID, metadata VaultItemMetadata, data []byte) error {
+			if sess == nil {
+				fmt.Println("Must login before checking vaults")
+				break
+			}
+			fmt.Print("Vault Id: ")
+			vault_id, _ := reader.ReadString('\n')
+			uuid, _ := uuid.Parse(strings.TrimSpace(vault_id))
+
+			fmt.Print("Password Name: ")
+			name, _ := reader.ReadString('\n')
+			name = strings.TrimSpace(name)
+
+			fmt.Print("Password Description: ")
+			description, _ := reader.ReadString('\n')
+			description = strings.TrimSpace(description)
+
+			fmt.Print("Password: ")
+			password, _ := reader.ReadString('\n')
+			password = strings.TrimSpace(password)
+
+			err = client.AddItemToVault(sess, uuid, VaultItemMetadata{Name: name, Description: description}, []byte(password))
+			if err != nil {
+				fmt.Println("Could not add password to vault")
+				break
 			}
 			break
 		default:
@@ -135,6 +151,7 @@ func main() {
 			fmt.Println("command: list_vaults, usage: ", "list all vaults")
 			fmt.Println("command: open_vault, usage: ", "open a particular vaults")
 			fmt.Println("command: add_vault, usage: ", "add vault to your account")
+			fmt.Println("command: add_password, usage: ", "add password to a vault")
 			fmt.Println("command: quit, usage: ", "exit the program")
 		}
 	}
