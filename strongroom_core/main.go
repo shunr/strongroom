@@ -3,11 +3,12 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"os"
+	"strings"
+
 	"github.com/google/uuid"
 	"github.com/shunr/strongroom_core/client"
 	. "github.com/shunr/strongroom_core/model"
-	"os"
-	"strings"
 )
 
 const LOCAL_STORE_FILE string = "/tmp/strongroom_store.json"

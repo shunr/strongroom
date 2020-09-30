@@ -2,6 +2,7 @@ package client
 
 import (
 	"errors"
+
 	"github.com/google/uuid"
 	"github.com/shunr/strongroom_core/crypto"
 	. "github.com/shunr/strongroom_core/model"
