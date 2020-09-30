@@ -20,8 +20,8 @@ type EncryptedVault struct {
 type Vault struct {
 	Id       uuid.UUID
 	Name     string
-	Items    map[uuid.UUID]VaultItem
 	Metadata map[uuid.UUID]VaultItemMetadata
+	Items    map[uuid.UUID]VaultItem
 }
 
 type VaultItemMetadata struct {
@@ -41,7 +41,7 @@ func NewVault(name string) Vault {
 	return vault
 }
 
-func (vault *Vault) AddVaultItem(name string, description string, data []byte, vault_key []byte) error {
+func (vault *Vault) AddVaultItem(metadata VaultItemMetadata, data []byte, vault_key []byte) error {
 	nonce := crypto.RandNonce()
 	enc_data, err := crypto.EncryptAESGCM(data, vault_key, nonce)
 	if err != nil {
@@ -49,7 +49,6 @@ func (vault *Vault) AddVaultItem(name string, description string, data []byte, v
 	}
 	item_id, _ := uuid.NewRandom()
 	vault_item := VaultItem{Id: item_id, EncryptedData: enc_data, Nonce: nonce}
-	metadata := VaultItemMetadata{Name: name, Description: description}
 	vault.Items[item_id] = vault_item
 	vault.Metadata[item_id] = metadata
 	return nil

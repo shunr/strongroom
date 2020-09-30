@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/shunr/strongroom_core/client"
+	. "github.com/shunr/strongroom_core/model"
 	"os"
 	"strings"
 )
@@ -54,12 +55,18 @@ func main() {
 		}
 		fmt.Println(sess.CurrentAccount.Username)
 		vid := client.AddVault(sess, "vault1")
-		vault, err := client.OpenVault(sess, vid)
+		vault, _, err := client.GetDecryptedVaultAndKey(sess, vid)
 		if err != nil {
 			panic(err.Error())
 		}
 		fmt.Println(vault)
-		//vault.AddVaultItem("password_1", "My password", []byte("bruh123"))
+		meta := VaultItemMetadata{Name: "password1", Description: "My password yay"}
+		client.AddItemToVault(sess, vid, meta, []byte("bruh123"))
+		vault, _, err = client.GetDecryptedVaultAndKey(sess, vid)
+		if err != nil {
+			panic(err.Error())
+		}
+		fmt.Println(vault)
 		break
 	default:
 		fmt.Println(client.Accounts())

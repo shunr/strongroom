@@ -72,32 +72,38 @@ func (client *StrongroomClient) AddVault(session *Session, name string) uuid.UUI
 	return vault.Id
 }
 
-func (client *StrongroomClient) OpenVault(session *Session, vault_id uuid.UUID) (*Vault, error) {
+func (client *StrongroomClient) GetDecryptedVaultAndKey(session *Session, vault_id uuid.UUID) (*Vault, []byte, error) {
+	// Return current state of a vault by id
 	vault_key, exists := session.CurrentAccount.VaultKeys[vault_id]
 	if !exists {
-		return nil, errors.New("Account does not have access to vault " + vault_id.String())
+		return nil, nil, errors.New("Account does not have access to vault " + vault_id.String())
 	}
-
 	// Decrypt encrypted vault key
 	decrypted_key, err := crypto.DecryptRSAOAEP(vault_key.EncryptedKey, []byte("vault_key"), session.PrivateKey)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	encrypted_vault, exists := client.local_store.EncryptedVaults[vault_id]
 	if !exists {
-		return nil, errors.New("No local vault " + vault_id.String())
+		return nil, nil, errors.New("No local vault " + vault_id.String())
 	}
 
 	vault := DecryptVault(encrypted_vault, decrypted_key)
 
-	return vault, nil
+	return vault, decrypted_key, nil
 }
 
-/*func (client *StrongroomClient) AddItemToVault(session *Session, vault *Vault, name string, description string, data []byte) error {
-	vault_key, exists := session.CurrentAccount.VaultKeys[vault_id]
-	if !exists {
-		return errors.New("Account does not have access to vault " + vault_id.String())
+func (client *StrongroomClient) AddItemToVault(session *Session, vault_id uuid.UUID, metadata VaultItemMetadata, data []byte) error {
+	// Return current state of a vault by id
+	vault, vault_key, err := client.GetDecryptedVaultAndKey(session, vault_id)
+	if err != nil {
+		return err
 	}
-
-}*/
+	vault.AddVaultItem(metadata, data, vault_key)
+	// Re-encrypt vault after modifying
+	encrypted_vault := EncryptVault(vault, vault_key)
+	client.local_store.EncryptedVaults[vault_id] = encrypted_vault
+	defer client.local_store.Save()
+	return nil
+}
