@@ -11,8 +11,6 @@ import (
 	. "github.com/shunr/strongroom_core/client"
 )
 
-const LOCAL_STORE_FILE string = "/tmp/strongroom_store.json"
-
 func main() {
 
 	reader := bufio.NewReader(os.Stdin)
@@ -54,18 +52,20 @@ func main() {
 			fmt.Print("Id: ")
 			id, _ := reader.ReadString('\n')
 			fmt.Print("Password: ")
-			password, err := reader.ReadString('\n')
+			password, _ := reader.ReadString('\n')
+			acc_id, err := uuid.Parse(strings.TrimSpace(id))
 			if err != nil {
-				panic(err.Error())
+				fmt.Println("Incorrect id or password")
+				break
 			}
-			acc_id, _ := uuid.Parse(strings.TrimSpace(id))
-			password = strings.TrimSpace(password)
 
+			password = strings.TrimSpace(password)
 			account := client.Accounts()[acc_id]
 			sess, err = client.NewSession(account, password)
 
 			if err != nil {
-				panic(err.Error())
+				fmt.Println("Incorrect id or password")
+				break
 			}
 			break
 		case "list_vaults":
@@ -85,7 +85,47 @@ func main() {
 
 			fmt.Print("Vault Name: ")
 			vault, _ := reader.ReadString('\n')
-			client.AddVault(sess, vault)
+			client.AddVault(sess, strings.TrimSpace(vault))
+			break
+		case "open_vault":
+			if sess == nil {
+				fmt.Println("Must login before checking vaults")
+				break
+			}
+
+			id, _ := reader.ReadString('\n')
+			uuid, _ := uuid.Parse(strings.TrimSpace(id))
+			vault, err := client.OpenVault(sess, uuid)
+
+			if err != nil {
+				fmt.Println("Cannot open vault: ", err.Error())
+				break
+			}
+
+			// Id       uuid.UUID
+			// Name     string
+			// Items    map[uuid.UUID]VaultItem
+			// Metadata map[uuid.UUID]VaultItemMetadata
+
+			// type VaultItemMetadata struct {
+			// 	Name        string
+			// 	Description string
+			// }
+
+			// type VaultItem struct {
+			// 	Id            uuid.UUID
+			// 	EncryptedData []byte
+			// 	Nonce         []byte
+			// }
+
+			fmt.Println("Vault Id: ", vault.Id)
+			fmt.Println("Vault Name: ", vault.Name)
+
+			for k, v := range vault.Items {
+				fmt.Println(vault.Metadata[k].Name)
+				fmt.Println(vault.Metadata[k].Description)
+				fmt.Println(string(v.EncryptedData))
+			}
 			break
 		default:
 			fmt.Println("Help")
@@ -93,6 +133,7 @@ func main() {
 			fmt.Println("command: login, usage: ", "to the account")
 			fmt.Println("command: list_accounts, usage: ", "list all accounts")
 			fmt.Println("command: list_vaults, usage: ", "list all vaults")
+			fmt.Println("command: open_vault, usage: ", "open a particular vaults")
 			fmt.Println("command: add_vault, usage: ", "add vault to your account")
 			fmt.Println("command: quit, usage: ", "exit the program")
 		}
