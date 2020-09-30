@@ -53,14 +53,13 @@ func main() {
 			panic(err.Error())
 		}
 		fmt.Println(sess.CurrentAccount.Username)
-
-		fmt.Println(sess.CurrentAccount.VaultKeys)
-		client.AddVault(sess, "vault1")
-		fmt.Println(sess.CurrentAccount.VaultKeys)
-		vaults := client.Vaults()
-		for k, v := range vaults {
-			fmt.Println(k, v)
+		vid := client.AddVault(sess, "vault1")
+		vault, err := client.OpenVault(sess, vid)
+		if err != nil {
+			panic(err.Error())
 		}
+		fmt.Println(vault)
+		//vault.AddVaultItem("password_1", "My password", []byte("bruh123"))
 		break
 	default:
 		fmt.Println(client.Accounts())

@@ -53,7 +53,7 @@ func (client *StrongroomClient) Vaults() map[uuid.UUID]*EncryptedVault {
 	return client.local_store.EncryptedVaults
 }
 
-func (client *StrongroomClient) AddVault(session *Session, name string) {
+func (client *StrongroomClient) AddVault(session *Session, name string) uuid.UUID {
 	vault := NewVault(name)
 	raw_vault_key := util.GenerateSymmetricKey()
 	public_key := &session.CurrentAccount.PublicKey
@@ -62,11 +62,42 @@ func (client *StrongroomClient) AddVault(session *Session, name string) {
 	client.local_store.EncryptedVaults[vault.Id] = EncryptVault(&vault, raw_vault_key)
 
 	// Encrypt and store encrypted vault key with account
-	enc_vault_key, err := crypto.EncryptRSAOAEP(raw_vault_key, []byte("vault_key_"+name), public_key)
+	enc_vault_key, err := crypto.EncryptRSAOAEP(raw_vault_key, []byte("vault_key"), public_key)
 	if err != nil {
 		panic(err.Error())
 	}
 	vault_key := VaultKey{VaultId: vault.Id, EncryptedKey: enc_vault_key}
 	session.CurrentAccount.VaultKeys[vault.Id] = vault_key
 	defer client.local_store.Save()
+	return vault.Id
 }
+
+func (client *StrongroomClient) OpenVault(session *Session, vault_id uuid.UUID) (*Vault, error) {
+	vault_key, exists := session.CurrentAccount.VaultKeys[vault_id]
+	if !exists {
+		return nil, errors.New("Account does not have access to vault " + vault_id.String())
+	}
+
+	// Decrypt encrypted vault key
+	decrypted_key, err := crypto.DecryptRSAOAEP(vault_key.EncryptedKey, []byte("vault_key"), session.PrivateKey)
+	if err != nil {
+		return nil, err
+	}
+
+	encrypted_vault, exists := client.local_store.EncryptedVaults[vault_id]
+	if !exists {
+		return nil, errors.New("No local vault " + vault_id.String())
+	}
+
+	vault := DecryptVault(encrypted_vault, decrypted_key)
+
+	return vault, nil
+}
+
+/*func (client *StrongroomClient) AddItemToVault(session *Session, vault *Vault, name string, description string, data []byte) error {
+	vault_key, exists := session.CurrentAccount.VaultKeys[vault_id]
+	if !exists {
+		return errors.New("Account does not have access to vault " + vault_id.String())
+	}
+
+}*/

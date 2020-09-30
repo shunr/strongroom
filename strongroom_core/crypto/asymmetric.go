@@ -8,7 +8,7 @@ import (
 )
 
 type PublicKey = rsa.PublicKey
-type PrivateKey = rsa.PublicKey
+type PrivateKey = rsa.PrivateKey
 
 func GenerateRSAKeyPair(bits int) (*rsa.PrivateKey, *rsa.PublicKey) {
 	key, err := rsa.GenerateKey(rand.Reader, bits)

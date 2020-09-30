@@ -12,6 +12,7 @@ type VaultKey struct {
 }
 
 type EncryptedVault struct {
+	Id            uuid.UUID
 	EncryptedData []byte
 	Nonce         []byte
 }
@@ -65,6 +66,7 @@ func EncryptVault(vault *Vault, vault_key []byte) *EncryptedVault {
 		panic(err.Error())
 	}
 	encrypted_vault := EncryptedVault{
+		Id:            vault.Id,
 		EncryptedData: enc_data,
 		Nonce:         nonce,
 	}
